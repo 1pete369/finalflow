@@ -17,6 +17,8 @@ export default function SignUpPage() {
 
   const [name, setName] = useState("")
   const [nameError, setNameError] = useState("")
+  const [username, setUsername] = useState("")
+  const [usernameError, setUsernameError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [mainError, setMainError] = useState("")
@@ -28,6 +30,15 @@ export default function SignUpPage() {
     setName(name)
     const error = name.length >= 2 ? "" : "Name must be at least 2 letters"
     setNameError(error)
+    setMainError("")
+  }
+
+  const handleUsername = (e: ChangeEvent<HTMLInputElement>) => {
+    const username = e.target.value.trim()
+    setUsername(username)
+    const error =
+      username.length >= 3 ? "" : "Username must be at least 3 characters"
+    setUsernameError(error)
     setMainError("")
   }
 
@@ -53,13 +64,16 @@ export default function SignUpPage() {
       password === "" ||
       passwordError !== "" ||
       nameError !== "" ||
-      name === ""
+      name === "" ||
+      usernameError !== "" ||
+      username === ""
     ) {
       setMainError("Fill all the fields required!")
       return
     }
     const data: signupDataType = {
       fullName: name.trim(),
+      username: username.trim(),
       email,
       password,
     }
@@ -115,6 +129,31 @@ export default function SignUpPage() {
             {nameError && (
               <p className="text-red-600 text-sm lg:text-sm mt-1.5 lg:mt-2 font-medium">
                 {nameError}
+              </p>
+            )}
+          </div>
+
+          {/* Username Field */}
+          <div className="w-full">
+            <label
+              htmlFor="username"
+              className="block text-sm lg:text-sm font-semibold text-gray-700 mb-1.5 lg:mb-2"
+            >
+              Username
+            </label>
+            <input
+              required
+              type="text"
+              id="username"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
+              placeholder="Choose a username"
+              autoComplete="off"
+              value={username}
+              onChange={handleUsername}
+            />
+            {usernameError && (
+              <p className="text-red-600 text-sm lg:text-sm mt-1.5 lg:mt-2 font-medium">
+                {usernameError}
               </p>
             )}
           </div>

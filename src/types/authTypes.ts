@@ -1,5 +1,6 @@
 export type signupDataType = {
   fullName: string
+  username: string
   email: string
   password: string
 }
