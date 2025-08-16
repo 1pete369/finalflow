@@ -1,22 +1,39 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { useAuthContext } from "@/context/useAuthContext"
-import { redirect } from "next/navigation"
-import toast from "react-hot-toast"
+import Hero from "@/components/home/Hero"
+import Features from "@/components/home/Features"
+import SocialProof from "@/components/home/SocialProof"
+import HowItWorks from "@/components/home/HowItWorks"
+import Pricing from "@/components/home/Pricing"
+import Footer from "@/components/home/Footer"
 
 export default function HomePage() {
-  const { authUser } = useAuthContext()
-
-  if (!authUser) {
-    redirect("/login")
-  }
-
   return (
-    <div className="h-[calc(100vh-81px)] flex items-center justify-center overflow-hidden">
-      <Button onClick={()=>{toast.success(`Hello , ${authUser.fullName}`)}} className="bg-secondary-800 hover:bg-secondary-500">
-        Click me
-      </Button>
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative overflow-hidden">
+      {/* Background */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-indigo-300/20 blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 h-[28rem] w-[28rem] rounded-full bg-fuchsia-300/20 blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 h-32 w-32 rotate-45 bg-indigo-200/30" />
+      </div>
+
+      {/* Hero Section */}
+      <Hero />
+
+      {/* Features Section */}
+      <Features />
+
+      {/* Social Proof Section */}
+      <SocialProof />
+
+      {/* How It Works Section */}
+      <HowItWorks />
+
+      {/* Pricing Section */}
+      <Pricing />
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

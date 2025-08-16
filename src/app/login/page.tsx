@@ -3,7 +3,6 @@ import { useAuthContext } from "@/context/useAuthContext"
 import { loginDataType } from "@/types/authTypes"
 import { validateEmail, validatePassword } from "@/utils/authFormValidators"
 import { Loader2 } from "lucide-react"
-import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ChangeEvent, FormEvent, useState } from "react"
@@ -52,97 +51,185 @@ export default function LoginPage() {
     }
     const data: loginDataType = {
       email,
-      password
+      password,
     }
 
     await login(data)
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 items-center justify-center bg-neutral-800 text-white px-4">
-      <form className="w-fit mx-auto flex flex-col items-center gap-4 border-2 border-primary-800 px-8 py-12 rounded-lg shadow-lg bg-neutral-800">
-        <h1 className="text-2xl font-semibold mb-2">Welcome back! 👋</h1>
-        <div className="w-full">
-          <label htmlFor="email" className="hidden">
-            Email:
-          </label>
-          <input
-            required
-            type="email"
-            id="email"
-            className="w-full rounded-md border border-white/30 focus:border-primary-800 outline-none px-3 py-2 placeholder:text-neutral-500 min-w-60"
-            placeholder="Enter email"
-            autoComplete="off"
-            value={email}
-            onChange={handleEmail}
-          />
-          {emailError && (
-            <p className="text-error text-sm mt-1">{emailError}</p>
-          )}
-        </div>
-        <div className="w-full">
-          <label htmlFor="password" className="hidden">
-            Password:
-          </label>
-          <input
-            required
-            type="password"
-            id="password"
-            className="w-full rounded-md border border-white/30 focus:border-primary-800 outline-none px-3 py-2 placeholder:text-neutral-500 min-w-60"
-            placeholder="Enter password"
-            autoComplete="off"
-            value={password}
-            onChange={handlePassword}
-          />
-          {passwordError && (
-            <p className="text-error text-sm mt-1">{passwordError}</p>
-          )}
-        </div>
-        <button
-          type="submit"
-          className="w-full px-4 py-2 bg-primary-800 text-white rounded-full hover:bg-primary-500 focus:ring-2 focus:ring-black focus:outline-none transition-all flex justify-center disabled:bg-primary-500"
-          onClick={handleSubmit}
-          disabled={isLoggingIn}
-        >
-          {isLoggingIn ? (
-            <p className="flex gap-2 items-center mx-auto">
-              <Loader2 size={20} className="animate-spin"/> Loading...
+    <div className="min-h-screen pt-20 lg:pt-0 grid grid-cols-1 lg:grid-cols-2 items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 text-black px-4 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-indigo-300 transform rotate-45"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-indigo-200 transform -rotate-12"></div>
+        <div className="absolute top-1/2 left-1/3 w-16 h-16 bg-indigo-100 transform rotate-90"></div>
+      </div>
+
+      {/* Left Side - Form */}
+      <div className="relative z-10 flex justify-center items-center w-full py-4 lg:py-0">
+        <form className="w-full max-w-sm sm:max-w-md lg:max-w-md flex flex-col items-center gap-4 lg:gap-6 border-2 border-gray-800 px-5 sm:px-8 lg:px-12 py-8 lg:py-16 bg-white shadow-2xl relative">
+          {/* Form Header */}
+          <div className="text-center mb-4 lg:mb-6">
+            {/* <div className="w-14 h-14 lg:w-14 lg:h-14 bg-indigo-700 flex items-center justify-center mb-3 mx-auto">
+              <span className="text-white font-bold text-xl lg:text-xl">
+                GF
+              </span>
+            </div> */}
+            <h1 className="text-2xl lg:text-4xl font-bold mb-2 lg:mb-3 text-gray-900">
+              Welcome back
+            </h1>
+            <p className="text-gray-600 text-sm lg:text-lg">
+              Sign in to continue your flow
             </p>
-          ) : (
-            "Login"
+          </div>
+
+          {/* Email Field */}
+          <div className="w-full">
+            <label
+              htmlFor="email"
+              className="block text-sm lg:text-sm font-semibold text-gray-700 mb-1.5 lg:mb-2"
+            >
+              Email
+            </label>
+            <input
+              required
+              type="email"
+              id="email"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-black transition-all duration-200 hover:border-gray-400 text-base"
+              placeholder="Enter your email"
+              autoComplete="off"
+              value={email}
+              onChange={handleEmail}
+            />
+            {emailError && (
+              <p className="text-red-600 text-sm mt-1.5 lg:mt-2 font-medium">
+                {emailError}
+              </p>
+            )}
+          </div>
+
+          {/* Password Field */}
+          <div className="w-full">
+            <label
+              htmlFor="password"
+              className="block text-sm lg:text-sm font-semibold text-gray-700 mb-1.5 lg:mb-2"
+            >
+              Password
+            </label>
+            <input
+              required
+              type="password"
+              id="password"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-black transition-all duration-200 hover:border-gray-400 text-base"
+              placeholder="Enter your password"
+              autoComplete="off"
+              value={password}
+              onChange={handlePassword}
+            />
+            {passwordError && (
+              <p className="text-red-600 text-sm mt-1.5 lg:mt-2 font-medium">
+                {passwordError}
+              </p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-indigo-700 text-white hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-600 focus:ring-offset-2 transition-all duration-200 flex justify-center items-center gap-2 font-semibold text-base lg:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-indigo-500 disabled:transform-none disabled:shadow-none"
+            onClick={handleSubmit}
+            disabled={isLoggingIn}
+          >
+            {isLoggingIn ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Signing in...</span>
+              </>
+            ) : (
+              "Sign in to GrindFlow"
+            )}
+          </button>
+
+          {/* Error Display */}
+          {mainError && (
+            <div className="w-full bg-red-50 border-2 border-red-200 px-4 py-3 lg:py-3 text-center">
+              <p className="text-red-600 text-sm font-medium">{mainError}</p>
+            </div>
           )}
-        </button>
-        {mainError && <p className="text-error text-sm mt-2">{mainError}</p>}
-        <span className="text-sm">
-          Don&apos;t have an account?
-          <Link href={"/signup"} className="underline">
-            Signup
-          </Link>
-        </span>
-      </form>
-      <div className="hidden lg:flex flex-col items-center justify-center gap-6 px-10">
-        <Image
-          src={"/logo.png"}
-          height={200}
-          width={200}
-          alt="logo"
-          className="rounded"
-        />
-        <h2 className="text-3xl font-bold text-primary-500 text-center">
-          Connect. Chat. Chill.
-        </h2>
-        <p className="text-center text-neutral-300 text-base max-w-md">
-          Welcome to our friendly chat space where you can:
-        </p>
-        <ul className="text-neutral-400 list-disc pl-6 space-y-1 text-left text-sm">
-          <li>Start real-time conversations</li>
-          <li>Make new friends easily</li>
-          <li>Stay connected with your people</li>
-          <li>All in a simple and secure way</li>
-        </ul>
-        <p className="text-sm italic text-neutral-500 text-center max-w-sm">
-        &quot;Great conversations start here 💬&quot;
-        </p>
+
+          {/* Sign Up Link */}
+          <div className="text-center text-gray-600 pt-4 lg:pt-4 border-t border-gray-200 w-full">
+            <span className="text-gray-500 text-sm lg:text-sm">
+              Don&apos;t have an account?{" "}
+            </span>
+            <Link
+              href={"/signup"}
+              className="text-indigo-600 hover:text-indigo-700 font-semibold underline hover:no-underline transition-all duration-200 text-sm lg:text-sm"
+            >
+              Create one now
+            </Link>
+          </div>
+        </form>
+      </div>
+
+      {/* Right Side - GrindFlow Info */}
+      <div className="hidden lg:flex flex-col items-center justify-center gap-6 px-10 relative z-10">
+        <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center shadow-2xl">
+          <span className="text-white font-bold text-3xl">GF</span>
+        </div>
+
+        <div className="text-center max-w-lg">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
+            Build your system
+          </h2>
+          <p className="text-gray-600 text-lg mb-6 leading-relaxed">
+            GrindFlow links habits to goals, tracks daily progress, and builds
+            systems that compound over time.
+          </p>
+        </div>
+
+        <div className="space-y-4 text-left w-full max-w-md">
+          <div className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 shadow-sm">
+            <div className="w-2.5 h-2.5 bg-indigo-600 flex-shrink-0"></div>
+            <span className="text-gray-800 font-medium text-sm">
+              Goals → Habits → Todos
+            </span>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 shadow-sm">
+            <div className="w-2.5 h-2.5 bg-indigo-600 flex-shrink-0"></div>
+            <span className="text-gray-800 font-medium text-sm">
+              Atomic habit tracking
+            </span>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 shadow-sm">
+            <div className="w-2.5 h-2.5 bg-indigo-600 flex-shrink-0"></div>
+            <span className="text-gray-800 font-medium text-sm">
+              System over goals
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 border-2 border-indigo-300 px-6 py-4 text-center shadow-lg">
+          <p className="text-indigo-800 font-semibold text-base italic">
+            &quot;You don&apos;t rise to the level of your goals, you fall to
+            the level of your systems&quot;
+          </p>
+        </div>
+
+        {/* Social Proof */}
+        <div className="text-center pt-4">
+          <p className="text-gray-500 text-xs mb-2">
+            Trusted by builders & students
+          </p>
+          <div className="flex items-center justify-center gap-3 text-gray-400">
+            <span className="text-xs">⭐ 4.9/5</span>
+            <span className="text-xs">•</span>
+            <span className="text-xs">10,000+ users</span>
+            <span className="text-xs">•</span>
+            <span className="text-xs">7-day trial</span>
+          </div>
+        </div>
       </div>
     </div>
   )
