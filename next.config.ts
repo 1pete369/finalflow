@@ -1,13 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:5001/api/:path*", // Proxy to backend
-      },
-    ];
-  },
-};
+  // Removed API proxy to fix cookie issues
+  // The frontend will make direct calls to the backend
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

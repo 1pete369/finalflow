@@ -19,7 +19,7 @@ export default function Navbar() {
 
   const pathname = usePathname()
 
-  if (pathname.startsWith("/chat")) return <></>
+  if (pathname.startsWith("/chat") || pathname.startsWith("/workspace")) return <></>
 
   if (["/login", "/signup"].some((route) => pathname.startsWith(route))) {
     return (

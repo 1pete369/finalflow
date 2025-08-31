@@ -91,8 +91,8 @@ export default function SignUpPage() {
       </div>
 
       {/* Left Side - Form */}
-      <div className="relative z-10 flex justify-center items-center w-full px-4 lg:px-0 py-4 lg:py-0">
-        <form className="w-full max-w-sm sm:max-w-md lg:max-w-md flex flex-col items-center gap-4 lg:gap-6 border-2 border-gray-800 px-5 sm:px-8 lg:px-10 py-8 lg:py-14 bg-white shadow-2xl relative">
+      <div className="relative z-10 flex justify-center items-center w-full px-4 lg:px-0 py-2 lg:py-0">
+        <form className="w-full max-w-sm sm:max-w-md lg:max-w-md flex flex-col items-center gap-2 lg:gap-2 border-2 border-gray-800 px-5 sm:px-8 lg:px-10 py-8 lg:py-14 bg-white shadow-2xl relative">
           {/* Form Header */}
           <div className="text-center mb-4 lg:mb-6">
             {/* <div className="w-14 h-14 lg:w-14 lg:h-14 bg-indigo-700 flex items-center justify-center mb-3 mx-auto">
@@ -120,7 +120,7 @@ export default function SignUpPage() {
               required
               type="text"
               id="name"
-              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-3 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
               placeholder="Enter your full name"
               autoComplete="off"
               value={name}
@@ -145,7 +145,7 @@ export default function SignUpPage() {
               required
               type="text"
               id="username"
-              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-3 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
               placeholder="Choose a username"
               autoComplete="off"
               value={username}
@@ -170,7 +170,7 @@ export default function SignUpPage() {
               required
               type="email"
               id="email"
-              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-3 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
               placeholder="Enter your email"
               autoComplete="off"
               value={email}
@@ -195,7 +195,7 @@ export default function SignUpPage() {
               required
               type="password"
               id="password"
-              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-4 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
+              className="w-full border-2 border-gray-300 focus:border-indigo-600 outline-none px-4 py-3 lg:py-3 placeholder:text-gray-400 bg-white text-gray-900 transition-all duration-200 hover:border-gray-400 text-base"
               placeholder="Create a password"
               autoComplete="off"
               value={password}
@@ -211,7 +211,7 @@ export default function SignUpPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-indigo-700 text-white hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-600 focus:ring-offset-2 transition-all duration-200 flex justify-center items-center gap-2 font-semibold text-base lg:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-indigo-500 disabled:transform-none disabled:shadow-none"
+            className="w-full px-6 lg:px-8 py-3 lg:py-3 bg-indigo-700 text-white hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-600 focus:ring-offset-2 transition-all duration-200 flex justify-center items-center gap-2 font-semibold text-base lg:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-indigo-500 disabled:transform-none disabled:shadow-none"
             onClick={handleSubmit}
             disabled={isSigningUp}
           >

@@ -1,131 +1,97 @@
 "use client"
 
-import {
-  Target,
-  TrendingUp,
-  CheckCircle,
-  FileText,
-  BookOpen,
-  Plus,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-
 interface SidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
+  isMobileMenuOpen: boolean
+  onMobileMenuToggle: (isOpen: boolean) => void
 }
 
 export default function Sidebar({
   activeSection,
   onSectionChange,
+  isMobileMenuOpen,
+  onMobileMenuToggle,
 }: SidebarProps) {
   const menuItems = [
     {
+      id: "todos",
+      title: "Todos",
+      icon: "📝",
+      description: "Manage your daily tasks and priorities",
+    },
+    {
       id: "goals",
-      label: "Goals",
-      icon: Target,
-      description: "Set and track your goals",
+      title: "Goals",
+      icon: "🎯",
+      description: "Set and track your long-term objectives",
     },
     {
       id: "habits",
-      label: "Habits",
-      icon: TrendingUp,
-      description: "Build daily habits",
+      title: "Habits",
+      icon: "🔄",
+      description: "Build and maintain positive routines",
     },
     {
-      id: "todos",
-      label: "Todos",
-      icon: CheckCircle,
-      description: "Manage daily tasks",
+      id: "finance",
+      title: "Finance",
+      icon: "💰",
+      description: "Track income, expenses, and financial goals",
     },
     {
       id: "notes",
-      label: "Notes",
-      icon: FileText,
-      description: "Capture ideas and insights",
+      title: "Notes",
+      icon: "📔",
+      description: "Capture ideas and important information",
     },
     {
       id: "journals",
-      label: "Journals",
-      icon: BookOpen,
-      description: "Reflect on your progress",
+      title: "Journals",
+      icon: "📖",
+      description: "Reflect on your daily experiences",
     },
   ]
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
-      <div className="p-6">
-        {/* Quick Actions */}
-        <div className="mb-6">
-          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Quick Add
-          </Button>
-        </div>
+    <>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
+          onClick={() => onMobileMenuToggle(false)} // Close sidebar by triggering section change
+        />
+      )}
 
-        {/* Navigation Menu */}
-        <nav className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = activeSection === item.id
-
-            return (
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed lg:static top-0 left-0 z-30
+          w-64 bg-white border-r border-gray-200 
+          transform transition-transform duration-300 ease-in-out
+          lg:translate-x-0
+          ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <div className="p-4 h-full pt-20 lg:pt-6">
+          {/* Navigation Menu */}
+          <nav className="space-y-1">
+            {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onSectionChange(item.id)}
-                className={`w-full text-left p-3 rounded-lg transition-all duration-200 group ${
-                  isActive
-                    ? "bg-indigo-50 border border-indigo-200 text-indigo-700"
-                    : "hover:bg-gray-50 text-gray-700 hover:text-gray-900"
+                className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors text-sm ${
+                  activeSection === item.id
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      isActive
-                        ? "bg-indigo-100 text-indigo-600"
-                        : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{item.label}</div>
-                    <div
-                      className={`text-xs ${
-                        isActive ? "text-indigo-600" : "text-gray-500"
-                      }`}
-                    >
-                      {item.description}
-                    </div>
-                  </div>
-                </div>
+                <span className="text-base">{item.icon}</span>
+                <span className="font-medium">{item.title}</span>
               </button>
-            )
-          })}
-        </nav>
-
-        {/* Progress Summary */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">
-            Today's Progress
-          </h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Goals</span>
-              <span className="font-medium">2/5 completed</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Habits</span>
-              <span className="font-medium">4/6 done</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Todos</span>
-              <span className="font-medium">8/12 done</span>
-            </div>
-          </div>
+            ))}
+          </nav>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   )
 }

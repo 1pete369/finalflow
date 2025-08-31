@@ -37,10 +37,7 @@ export default function RootLayout({
         <link rel="icon" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
-      <body
-        suppressHydrationWarning
-        className={`bg-neutral-800 text-white ${inter.className}`}
-      >
+      <body suppressHydrationWarning className={`${inter.className}`}>
         <AuthContextProvider>
           <Navbar />
           {children}
