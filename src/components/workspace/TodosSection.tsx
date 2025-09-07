@@ -36,24 +36,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-interface Todo {
-  id: string
-  title: string
-  description: string
-  isCompleted: boolean
-  startTime: string
-  endTime: string
-  category: string
-  icon: string
-  recurring: "none" | "daily" | "weekly" | "monthly"
-  days: string[]
-  priority: "low" | "medium" | "high"
-  completedDates: string[]
-  scheduledDate: string
-  createdAt: string
-  updatedAt: string
-}
+import {
+  getTodos,
+  createTodo,
+  updateTodo,
+  deleteTodo,
+  toggleTodoStatus,
+  type Todo,
+  type CreateTodoData,
+} from "@/services"
 
 interface TodosSectionProps {
   showTodoForm: boolean
@@ -73,6 +64,7 @@ export default function TodosSection({
   onCountsUpdate,
 }: TodosSectionProps) {
   const [todos, setTodos] = useState<Todo[]>([])
+  const [loading, setLoading] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
   const [formData, setFormData] = useState({
     title: "",
@@ -87,170 +79,86 @@ export default function TodosSection({
     days: [] as string[],
   })
 
-  // Mock data for now - will be replaced with API calls
+  // Load todos from API
+  const loadTodos = async () => {
+    try {
+      setLoading(true)
+      const fetchedTodos = await getTodos()
+      setTodos(fetchedTodos)
+    } catch (error) {
+      console.error("Failed to load todos:", error)
+      // You might want to show a toast notification here
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    const mockTodos: Todo[] = [
-      {
-        id: "1",
-        title: "Morning Coffee & Check Emails",
-        description: "Start the day with coffee and review important emails.",
-        isCompleted: true,
-        startTime: "07:00",
-        endTime: "07:30",
-        category: "personal",
-        icon: "☕",
-        recurring: "daily",
-        days: [],
-        priority: "low",
-        completedDates: [],
-        scheduledDate: "2024-01-20",
-        createdAt: "2024-01-15",
-        updatedAt: "2024-01-15",
-      },
-      {
-        id: "2",
-        title: "Take Vitamins & Drink Water",
-        description: "Take daily vitamins and drink first glass of water.",
-        isCompleted: true,
-        startTime: "08:00",
-        endTime: "08:05",
-        category: "health",
-        icon: "💊",
-        recurring: "daily",
-        days: [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
-        ],
-        priority: "medium",
-        completedDates: [
-          "2024-01-15",
-          "2024-01-16",
-          "2024-01-17",
-          "2024-01-18",
-          "2024-01-19",
-          "2024-01-20",
-        ],
-        scheduledDate: "2024-01-20",
-        createdAt: "2024-01-10",
-        updatedAt: "2024-01-20",
-      },
-      {
-        id: "3",
-        title: "Call Mom",
-        description: "Weekly check-in call with family.",
-        isCompleted: false,
-        startTime: "18:00",
-        endTime: "18:30",
-        category: "personal",
-        icon: "📞",
-        recurring: "weekly",
-        days: ["sunday"],
-        priority: "high",
-        completedDates: [],
-        scheduledDate: "2024-01-21",
-        createdAt: "2024-01-16",
-        updatedAt: "2024-01-16",
-      },
-      {
-        id: "4",
-        title: "Prepare Lunch for Tomorrow",
-        description: "Meal prep for tomorrow's lunch.",
-        isCompleted: false,
-        startTime: "20:00",
-        endTime: "20:30",
-        category: "personal",
-        icon: "🥗",
-        recurring: "daily",
-        days: [],
-        priority: "medium",
-        completedDates: [],
-        scheduledDate: "2024-01-20",
-        createdAt: "2024-01-17",
-        updatedAt: "2024-01-17",
-      },
-      {
-        id: "5",
-        title: "Walk the Dog",
-        description: "Evening walk around the neighborhood.",
-        isCompleted: false,
-        startTime: "19:00",
-        endTime: "19:30",
-        category: "personal",
-        icon: "🐕",
-        recurring: "daily",
-        days: [],
-        priority: "high",
-        completedDates: [],
-        scheduledDate: "2024-01-20",
-        createdAt: "2024-01-18",
-        updatedAt: "2024-01-19",
-      },
-      {
-        id: "6",
-        title: "Read 20 Minutes Before Bed",
-        description: "Wind down with some light reading.",
-        isCompleted: false,
-        startTime: "21:30",
-        endTime: "21:50",
-        category: "personal",
-        icon: "📖",
-        recurring: "daily",
-        days: [],
-        priority: "low",
-        completedDates: [],
-        scheduledDate: "2024-01-20",
-        createdAt: "2024-01-18",
-        updatedAt: "2024-01-19",
-      },
-    ]
-    setTodos(mockTodos)
+    loadTodos()
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (editingTodo) {
-      // Update existing todo
-      setTodos(
-        todos.map((todo) =>
-          todo.id === editingTodo.id
-            ? { ...todo, ...formData, scheduledDate: formData.dueDate }
-            : todo
-        )
-      )
-      setEditingTodo(null)
-    } else {
-      // Add new todo
-      const newTodo: Todo = {
-        id: Date.now().toString(),
-        ...formData,
-        isCompleted: false,
-        scheduledDate: formData.dueDate,
-        completedDates: [],
-        createdAt: new Date().toISOString().split("T")[0],
-        updatedAt: new Date().toISOString().split("T")[0],
-      }
-      setTodos([...todos, newTodo])
-    }
+    try {
+      if (editingTodo) {
+        // Update existing todo
+        const updatedTodo = await updateTodo({
+          _id: editingTodo._id,
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          dueDate: formData.dueDate,
+          category: formData.category,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          icon: formData.icon,
+          recurring: formData.recurring,
+          days: formData.days,
+        })
 
-    setFormData({
-      title: "",
-      description: "",
-      priority: "medium" as "low" | "medium" | "high",
-      dueDate: "",
-      category: "personal",
-      startTime: "09:00",
-      endTime: "10:00",
-      icon: "⚙️",
-      recurring: "none" as "none" | "daily" | "weekly" | "monthly",
-      days: [],
-    })
-    setShowTodoForm(false)
+        setTodos(
+          todos.map((todo) =>
+            todo._id === editingTodo._id ? updatedTodo : todo
+          )
+        )
+        setEditingTodo(null)
+      } else {
+        // Add new todo
+        const newTodo = await createTodo({
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          dueDate: formData.dueDate,
+          category: formData.category,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          icon: formData.icon,
+          recurring: formData.recurring,
+          days: formData.days,
+        })
+
+        setTodos([...todos, newTodo])
+      }
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        priority: "medium" as "low" | "medium" | "high",
+        dueDate: "",
+        category: "personal",
+        startTime: "09:00",
+        endTime: "10:00",
+        icon: "⚙️",
+        recurring: "none" as "none" | "daily" | "weekly" | "monthly",
+        days: [],
+      })
+      setShowTodoForm(false)
+    } catch (error) {
+      console.error("Failed to save todo:", error)
+      // You might want to show a toast notification here
+    }
   }
 
   const handleEdit = (todo: Todo) => {
@@ -259,7 +167,7 @@ export default function TodosSection({
       title: todo.title,
       description: todo.description,
       priority: todo.priority,
-      dueDate: todo.scheduledDate, // Map scheduledDate to dueDate for form
+      dueDate: new Date(todo.scheduledDate).toISOString().split("T")[0], // Convert Date to YYYY-MM-DD format
       category: todo.category,
       startTime: todo.startTime,
       endTime: todo.endTime,
@@ -270,16 +178,24 @@ export default function TodosSection({
     setShowTodoForm(true)
   }
 
-  const handleDelete = (todoId: string) => {
-    setTodos(todos.filter((todo) => todo.id !== todoId))
+  const handleDelete = async (todoId: string) => {
+    try {
+      await deleteTodo(todoId)
+      setTodos(todos.filter((todo) => todo._id !== todoId))
+    } catch (error) {
+      console.error("Failed to delete todo:", error)
+      // You might want to show a toast notification here
+    }
   }
 
-  const handleStatusChange = (todoId: string, isCompleted: boolean) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === todoId ? { ...todo, isCompleted } : todo
-      )
-    )
+  const handleStatusChange = async (todoId: string, isCompleted: boolean) => {
+    try {
+      const updatedTodo = await toggleTodoStatus(todoId, isCompleted)
+      setTodos(todos.map((todo) => (todo._id === todoId ? updatedTodo : todo)))
+    } catch (error) {
+      console.error("Failed to update todo status:", error)
+      // You might want to show a toast notification here
+    }
   }
 
   const getPriorityColor = (priority: Todo["priority"]) => {
@@ -302,6 +218,20 @@ export default function TodosSection({
     return true
   })
 
+  // Helper function to format date for display
+  const formatDateForDisplay = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    } catch (error) {
+      return dateString
+    }
+  }
+
   // Group todos by date
   const groupTodosByDate = (todos: Todo[]) => {
     const today = new Date()
@@ -318,7 +248,8 @@ export default function TodosSection({
     const grouped: { [key: string]: Todo[] } = {}
 
     todos.forEach((todo) => {
-      const todoDate = todo.scheduledDate
+      // Convert scheduledDate to YYYY-MM-DD format for grouping
+      const todoDate = new Date(todo.scheduledDate).toISOString().split("T")[0]
       if (!grouped[todoDate]) {
         grouped[todoDate] = []
       }
@@ -362,6 +293,14 @@ export default function TodosSection({
       onCountsUpdate(counts)
     }
   }, [todos, onCountsUpdate])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-gray-500">Loading todos...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -556,29 +495,29 @@ export default function TodosSection({
             </div>
 
             {/* Tasks for this date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
               {group.todos.map((todo) => (
                 <div
-                  key={todo.id}
+                  key={todo._id}
                   className={` border-1 border-gray-200 transition-all w-full${
-                    todo.isCompleted ? "opacity-75" : ""
-                  }`}
+                    todo.isCompleted ? "opacity-50" : ""
+                  } bg-gradient-to-r from-white to-gray-50`}
                 >
                   {/* Top Section - Title and Actions */}
-                  <div className="flex items-center justify-between  px-3 pt-3">
+                  <div className="flex items-center justify-between  px-3 pt-3 ">
                     <div className="flex items-center gap-2 flex-1 ">
                       <div className="flex items-center gap-2 flex-1 ">
                         <Checkbox
                           checked={todo.isCompleted}
                           onCheckedChange={(checked) =>
-                            handleStatusChange(todo.id, checked as boolean)
+                            handleStatusChange(todo._id, checked as boolean)
                           }
                           className="h-8 w-8 rounded-full border-1 border-green-500 data-[state=checked]:border-green-500 data-[state=checked]:bg-green-500 data-[state=checked]:text-white"
-                          id={`todo-${todo.id}`}
+                          id={`todo-${todo._id}`}
                         />
                         <div className="flex flex-col justify-between gap-1">
                           <Label
-                            htmlFor={`todo-${todo.id}`}
+                            htmlFor={`todo-${todo._id}`}
                             className={`text font-semibold truncate h-6 cursor-pointer ${
                               todo.isCompleted
                                 ? "line-through text-gray-500"
@@ -589,7 +528,7 @@ export default function TodosSection({
                           </Label>
                           {/* Middle Section - Description */}
                           <Label
-                            htmlFor={`todo-${todo.id}`}
+                            htmlFor={`todo-${todo._id}`}
                             className={`text-xs line-clamp-1 cursor-pointer ${
                               todo.isCompleted
                                 ? "text-gray-400"
@@ -598,7 +537,6 @@ export default function TodosSection({
                           >
                             {todo.description}
                           </Label>
-                          
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -618,7 +556,7 @@ export default function TodosSection({
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleDelete(todo.id)}
+                              onClick={() => handleDelete(todo._id)}
                               className="text-red-600 hover:bg-red-100"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -642,7 +580,7 @@ export default function TodosSection({
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4 text-gray-600" />
                         <span className="text-gray-700 font-medium">
-                          {todo.scheduledDate}
+                          {formatDateForDisplay(todo.scheduledDate)}
                         </span>
                       </div>
                     </div>

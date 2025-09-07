@@ -5,7 +5,7 @@ import { useAuthContext } from "@/context/useAuthContext"
 import { redirect, useSearchParams, useRouter } from "next/navigation"
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader"
 import Sidebar from "@/components/workspace/Sidebar"
-import GreetingSection from "@/components/workspace/GreetingSection"
+
 import TodosSection from "@/components/workspace/TodosSection"
 import GoalsSection from "@/components/workspace/GoalsSection"
 import HabitsSection from "@/components/workspace/HabitsSection"
@@ -133,7 +133,20 @@ export default function WorkspacePage() {
             {/* Greeting and Add Button Row */}
             <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               {/* Greeting Section */}
-              <GreetingSection activeSection={activeSection} />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 mb-1">
+                  Good{" "}
+                  {new Date().getHours() < 12
+                    ? "Morning"
+                    : new Date().getHours() < 18
+                    ? "Afternoon"
+                    : "Evening"}
+                  !
+                </h1>
+                <p className="text-gray-600 text-sm">
+                  Manage your daily tasks and priorities
+                </p>
+              </div>
 
               {/* Filters + Add Button */}
               <div className="flex items-center gap-4">
