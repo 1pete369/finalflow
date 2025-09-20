@@ -3,38 +3,64 @@
 import { useState, useEffect } from "react"
 import { useAuthContext } from "@/context/useAuthContext"
 import { redirect, useSearchParams, useRouter } from "next/navigation"
-import WorkspaceHeader from "@/components/workspace/WorkspaceHeader"
+import { Menu, List, Clock, CheckCircle, Calendar, ChevronDown, History, Tag, SlidersHorizontal, Briefcase, Heart, BookOpen, ShoppingCart, Wallet, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Sidebar from "@/components/workspace/Sidebar"
 
 import TodosSection from "@/components/workspace/TodosSection"
+import CalendarSection from "@/components/workspace/CalendarSection"
 import GoalsSection from "@/components/workspace/GoalsSection"
 import HabitsSection from "@/components/workspace/HabitsSection"
 import NotesSection from "@/components/workspace/NotesSection"
 import JournalsSection from "@/components/workspace/JournalsSection"
 import FinanceSection from "@/components/workspace/FinanceSection"
 
+type FilterKey = "all" | "pending" | "completed" | "upcoming" | "past"
+
 export default function WorkspacePage() {
   const { authUser } = useAuthContext()
   const searchParams = useSearchParams()
   const router = useRouter()
+
   const [activeSection, setActiveSection] = useState("todos")
   const [isLoading, setIsLoading] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showTodoForm, setShowTodoForm] = useState(false)
   const [showFinanceForm, setShowFinanceForm] = useState(false)
-  const [filter, setFilter] = useState<"all" | "pending" | "completed">("all")
+  const [showGoalsForm, setShowGoalsForm] = useState(false)
+  const [filter, setFilter] = useState<FilterKey>("all")
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "high" | "medium" | "low">("all")
+  const [categoryFilter, setCategoryFilter] = useState<
+    | "all"
+    | "personal"
+    | "work"
+    | "learning"
+    | "health"
+    | "shopping"
+    | "finance"
+  >("all")
   const [todoCounts, setTodoCounts] = useState({
     all: 0,
     pending: 0,
     completed: 0,
+    upcoming: 0,
+    past: 0,
   })
+
 
   // Read initial section from URL on mount
   useEffect(() => {
     const urlSection = searchParams.get("section")
     if (
       urlSection &&
-      ["todos", "goals", "habits", "notes", "journals", "finance"].includes(
+      ["todos", "calendar", "goals", "habits", "notes", "journals", "finance"].includes(
         urlSection
       )
     ) {
@@ -42,7 +68,7 @@ export default function WorkspacePage() {
     }
   }, [searchParams])
 
-  // Update URL when section changes (debounced to avoid excessive URL updates)
+  // Update URL when section changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       router.replace(`/workspace?section=${activeSection}`, { scroll: false })
@@ -50,16 +76,10 @@ export default function WorkspacePage() {
     return () => clearTimeout(timer)
   }, [activeSection, router])
 
-  // Handle section changes
-  const handleSectionChange = (section: string) => {
-    setActiveSection(section)
-    // URL will be updated automatically via useEffect above
-  }
+  const handleSectionChange = (section: string) => setActiveSection(section)
 
   useEffect(() => {
-    if (!authUser) {
-      redirect("/login")
-    }
+    if (!authUser) redirect("/login")
     setIsLoading(false)
   }, [authUser])
 
@@ -82,11 +102,15 @@ export default function WorkspacePage() {
             showTodoForm={showTodoForm}
             setShowTodoForm={setShowTodoForm}
             filter={filter}
+            priorityFilter={priorityFilter}
+            categoryFilter={categoryFilter}
             onCountsUpdate={setTodoCounts}
           />
         )
+      case "calendar":
+        return <CalendarSection />
       case "goals":
-        return <GoalsSection />
+        return <GoalsSection showAddForm={showGoalsForm} setShowAddForm={setShowGoalsForm} />
       case "habits":
         return <HabitsSection />
       case "notes":
@@ -112,13 +136,15 @@ export default function WorkspacePage() {
     }
   }
 
-  return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      <WorkspaceHeader
-        isMobileMenuOpen={isMobileMenuOpen}
-        onMobileMenuToggle={setIsMobileMenuOpen}
-      />
+  const greeting =
+    new Date().getHours() < 12
+      ? "Morning"
+      : new Date().getHours() < 18
+      ? "Afternoon"
+      : "Evening"
 
+  return (
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
       <div className="flex flex-1 min-h-0">
         <Sidebar
           activeSection={activeSection}
@@ -128,109 +154,240 @@ export default function WorkspacePage() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6 lg:p-4 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">
-            {/* Greeting and Add Button Row */}
-            <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <main className="flex-1 p-3 sm:p-4 lg:p-4 overflow-y-auto">
+          <div className="max-w-7xl mx-auto w-full">
+            {/* Header Row */}
+            <div className="mb-4 pr-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between w-full">
               {/* Greeting Section */}
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 mb-1">
-                  Good{" "}
-                  {new Date().getHours() < 12
-                    ? "Morning"
-                    : new Date().getHours() < 18
-                    ? "Afternoon"
-                    : "Evening"}
-                  !
-                </h1>
-                <p className="text-gray-600 text-sm">
-                  Manage your daily tasks and priorities
-                </p>
+              <div className="flex items-center justify-between gap-2 lg:w-auto w-full min-w-0">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl font-bold text-gray-900 mb-1 truncate">
+                    Good {greeting}!
+                  </h1>
+                  <p className="text-gray-600 text-xs truncate">
+                    Manage your daily tasks and priorities
+                  </p>
+                </div>
+
+                {/* Menu button for mobile */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="lg:hidden p-2 hover:bg-gray-100 shrink-0"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                  <Menu className="h-5 w-5 text-gray-600" />
+                </Button>
               </div>
 
-              {/* Filters + Add Button */}
-              <div className="flex items-center gap-4">
-                {/* Filter Buttons */}
+              {/* Filters + Add Button - Right aligned on desktop */}
+              <div className="flex items-start justify-between  sm:items-center gap-2 lg:gap-4 w-full lg:w-auto lg:justify-end">
+                 {/* Filter Dropdown */}
+                 {activeSection === "todos" && (
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <Button
+                         variant="outline"
+                         className="flex items-center gap-2 text-sm font-medium min-w-fit"
+                       >
+                         {(() => {
+                           const filterOptions = {
+                             all: { icon: List, label: "All", count: todoCounts.all, color: "text-blue-600", bgColor: "bg-blue-50", countBg: "bg-blue-100 text-blue-700" },
+                             pending: { icon: Clock, label: "Pending", count: todoCounts.pending, color: "text-orange-600", bgColor: "bg-orange-50", countBg: "bg-orange-100 text-orange-700" },
+                             completed: { icon: CheckCircle, label: "Completed", count: todoCounts.completed, color: "text-green-600", bgColor: "bg-green-50", countBg: "bg-green-100 text-green-700" },
+                             upcoming: { icon: Calendar, label: "Upcoming", count: todoCounts.upcoming, color: "text-purple-600", bgColor: "bg-purple-50", countBg: "bg-purple-100 text-purple-700" },
+                             past: { icon: History, label: "Past", count: todoCounts.past, color: "text-gray-600", bgColor: "bg-gray-50", countBg: "bg-gray-100 text-gray-700" },
+                           }
+                           const current = filterOptions[filter]
+                           const Icon = current.icon
+                           return (
+                             <>
+                               <Icon className={`h-4 w-4 ${current.color}`} />
+                               <span className={current.color}>{current.label}</span>
+                               <span className={`text-xs min-w-[20px] h-[20px] flex items-center justify-center rounded-full ${current.countBg}`}>
+                                 {current.count}
+                               </span>
+                               <ChevronDown className="h-4 w-4 text-gray-400" />
+                             </>
+                           )
+                         })()}
+                       </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent align="start" className="w-48">
+                       {([
+                         { key: "all", icon: List, count: todoCounts.all, label: "All", color: "text-blue-600", bgColor: "bg-blue-50", countBg: "bg-blue-100 text-blue-700" },
+                         { key: "pending", icon: Clock, count: todoCounts.pending, label: "Pending", color: "text-orange-600", bgColor: "bg-orange-50", countBg: "bg-orange-100 text-orange-700" },
+                         { key: "completed", icon: CheckCircle, count: todoCounts.completed, label: "Completed", color: "text-green-600", bgColor: "bg-green-50", countBg: "bg-green-100 text-green-700" },
+                         { key: "upcoming", icon: Calendar, count: todoCounts.upcoming, label: "Upcoming", color: "text-purple-600", bgColor: "bg-purple-50", countBg: "bg-purple-100 text-purple-700" },
+                       ] as const).map(({ key, icon: Icon, count, label, color, bgColor, countBg }) => (
+                         <DropdownMenuItem
+                           key={key}
+                           onClick={() => setFilter(key as FilterKey)}
+                           className={`flex items-center gap-3 cursor-pointer hover:${bgColor} focus:${bgColor}`}
+                         >
+                           <Icon className={`h-4 w-4 ${color}`} />
+                           <span className={`flex-1 ${color}`}>{label}</span>
+                           <span className={`text-xs min-w-[20px] h-[20px] flex items-center justify-center rounded-full ${countBg}`}>
+                             {count}
+                           </span>
+                         </DropdownMenuItem>
+                       ))}
+                       <DropdownMenuSeparator />
+                       <DropdownMenuItem
+                         onClick={() => setFilter("past" as FilterKey)}
+                         className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 focus:bg-gray-50"
+                       >
+                         <History className="h-4 w-4 text-gray-600" />
+                         <span className="flex-1 text-gray-600">Past</span>
+                         <span className="text-xs min-w-[20px] h-[20px] flex items-center justify-center rounded-full bg-gray-100 text-gray-700">
+                           {todoCounts.past}
+                         </span>
+                       </DropdownMenuItem>
+                     </DropdownMenuContent>
+                   </DropdownMenu>
+                 )}
+
                 {activeSection === "todos" && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setFilter("all")}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-lg flex items-center gap-2 ${
-                        filter === "all"
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
-                      }`}
-                    >
-                      <span>All</span>
-                      <span
-                        className={`text-xs px-1.5 py-0.5 rounded-full ${
-                          filter === "all"
-                            ? "bg-white/20 text-white"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {todoCounts.all}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setFilter("pending")}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-lg flex items-center gap-2 ${
-                        filter === "pending"
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
-                      }`}
-                    >
-                      <span>Pending</span>
-                      <span
-                        className={`text-xs px-1.5 py-0.5 rounded-full ${
-                          filter === "pending"
-                            ? "bg-white/20 text-white"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {todoCounts.pending}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setFilter("completed")}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-lg flex items-center gap-2 ${
-                        filter === "completed"
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
-                      }`}
-                    >
-                      <span>Completed</span>
-                      <span
-                        className={`text-xs px-1.5 py-0.5 rounded-full ${
-                          filter === "completed"
-                            ? "bg-white/20 text-white"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {todoCounts.completed}
-                      </span>
-                    </button>
-                  </div>
+                  <>
+                    {/* Priority Filter */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="text-sm gap-2">
+                          <SlidersHorizontal className="h-4 w-4" />
+                          {(() => {
+                            const colorMap: Record<string, string> = {
+                              high: "text-red-600",
+                              medium: "text-orange-600",
+                              low: "text-green-600",
+                              all: "text-blue-600",
+                            }
+                            const dotMap: Record<string, string> = {
+                              high: "bg-red-500",
+                              medium: "bg-yellow-500",
+                              low: "bg-green-500",
+                              all: "bg-blue-500",
+                            }
+                            const label = priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1)
+                            return (
+                              <span className={`flex items-center gap-2 ${colorMap[priorityFilter]}`}>
+                                <span className={`w-2 h-2 rounded-full ${dotMap[priorityFilter]}`}></span>
+                                {label}
+                              </span>
+                            )
+                          })()}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-44">
+                        {(() => {
+                          const renderItem = (p: "all" | "high" | "medium" | "low") => {
+                            const textColor = p === "high" ? "text-red-600" : p === "medium" ? "text-orange-600" : p === "low" ? "text-green-600" : "text-blue-600"
+                            const dotColor = p === "high" ? "bg-red-500" : p === "medium" ? "bg-yellow-500" : p === "low" ? "bg-green-500" : "bg-blue-500"
+                            return (
+                              <DropdownMenuItem
+                                key={p}
+                                onClick={() => setPriorityFilter(p)}
+                                className={`capitalize ${priorityFilter===p ? "bg-blue-50" : ""}`}
+                              >
+                                <span className={`w-2 h-2 rounded-full mr-2 ${dotColor}`}></span>
+                                <span className={textColor}>{p}</span>
+                              </DropdownMenuItem>
+                            )
+                          }
+                          return (
+                            <>
+                              {renderItem("all")}
+                              <DropdownMenuSeparator />
+                              {(["high","medium","low"] as const).map(renderItem)}
+                            </>
+                          )
+                        })()}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Category Filter */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="text-sm gap-2">
+                          {(() => {
+                            const iconMap: Record<string, React.ReactNode> = {
+                              personal: <User className="h-4 w-4 text-purple-600" />,
+                              work: <Briefcase className="h-4 w-4 text-blue-600" />,
+                              learning: <BookOpen className="h-4 w-4 text-indigo-600" />,
+                              health: <Heart className="h-4 w-4 text-rose-600" />,
+                              shopping: <ShoppingCart className="h-4 w-4 text-emerald-600" />,
+                              finance: <Wallet className="h-4 w-4 text-amber-600" />,
+                              all: <Tag className="h-4 w-4 text-gray-600" />,
+                            }
+                            const colorMap: Record<string, string> = {
+                              personal: "text-purple-700",
+                              work: "text-blue-700",
+                              learning: "text-indigo-700",
+                              health: "text-rose-700",
+                              shopping: "text-emerald-700",
+                              finance: "text-amber-700",
+                              all: "text-gray-700",
+                            }
+                            const label = categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)
+                            return (
+                              <span className={`flex items-center gap-2 ${colorMap[categoryFilter]}`}>
+                                {iconMap[categoryFilter]}
+                                {label}
+                              </span>
+                            )
+                          })()}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        {(() => {
+                          const items = [
+                            {key: "all", icon: <Tag className="h-4 w-4 text-gray-600" />, color:"text-gray-700"},
+                            {key: "personal", icon: <User className="h-4 w-4 text-purple-600" />, color:"text-purple-700"},
+                            {key: "work", icon: <Briefcase className="h-4 w-4 text-blue-600" />, color:"text-blue-700"},
+                            {key: "learning", icon: <BookOpen className="h-4 w-4 text-indigo-600" />, color:"text-indigo-700"},
+                            {key: "health", icon: <Heart className="h-4 w-4 text-rose-600" />, color:"text-rose-700"},
+                            {key: "shopping", icon: <ShoppingCart className="h-4 w-4 text-emerald-600" />, color:"text-emerald-700"},
+                            {key: "finance", icon: <Wallet className="h-4 w-4 text-amber-600" />, color:"text-amber-700"},
+                          ] as const
+                          const renderItem = (i: typeof items[number]) => (
+                            <DropdownMenuItem
+                              key={i.key}
+                              onClick={() => setCategoryFilter(i.key as "all" | "personal" | "work" | "learning" | "health" | "shopping" | "finance")}
+                              className={`capitalize flex items-center gap-2 ${categoryFilter===i.key?"bg-blue-50":""}`}
+                            >
+                              {i.icon}
+                              <span className={i.color}>{i.key.charAt(0).toUpperCase()+i.key.slice(1)}</span>
+                            </DropdownMenuItem>
+                          )
+                          return (
+                            <>
+                              {renderItem(items[0])}
+                              <DropdownMenuSeparator />
+                              {items.slice(1).map(renderItem)}
+                            </>
+                          )
+                        })()}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
                 )}
 
-                {/* Add Button */}
-                <button
-                  onClick={() => {
-                    if (activeSection === "todos") {
-                      setShowTodoForm(true)
-                    } else if (activeSection === "finance") {
-                      setShowFinanceForm(true)
-                    }
-                  }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-sm"
-                >
-                  <span className="text-lg">+</span>
-                  <span className="hidden sm:inline">
-                    Add{" "}
-                    {activeSection.charAt(0).toUpperCase() +
-                      activeSection.slice(1)}
-                  </span>
-                </button>
+                {/* Add Button - Hide for calendar section */}
+                {activeSection !== "calendar" && (
+                  <button
+                    onClick={() => {
+                      if (activeSection === "todos") setShowTodoForm(true)
+                      else if (activeSection === "finance") setShowFinanceForm(true)
+                      else if (activeSection === "goals") setShowGoalsForm(true)
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 w-fit text-sm rounded-lg font-medium flex items-center gap-2 shadow-sm shrink-0"
+                  >
+                    <span className="text-base leading-none">+</span>
+                    <span className=" sm:inline lg:inline-block">Add</span>
+                    <span className="hidden sm:inline lg:inline-block">
+                      {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
 

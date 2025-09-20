@@ -181,3 +181,30 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Cross-browser hide (still scrollable) */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE/old Edge */
+    scrollbar-width: none;    /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Edge (Chromium) */
+  }
+
+  /* Hide horizontal scrollbar only (element must be overflow-x scrollable) */
+  .scrollbar-x-hide::-webkit-scrollbar {
+    height: 0; /* WebKit */
+  }
+  .scrollbar-x-hide {
+    scrollbar-width: thin; /* keeps vertical scrollbar in Firefox */
+  }
+
+  /* Hide vertical scrollbar only (element must be overflow-y scrollable) */
+  .scrollbar-y-hide::-webkit-scrollbar {
+    width: 0; /* WebKit */
+  }
+  .scrollbar-y-hide {
+    scrollbar-width: none; /* hides vertical in Firefox; horizontal remains */
+  }
+}

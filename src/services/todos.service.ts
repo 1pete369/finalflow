@@ -56,8 +56,6 @@ export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
       scheduledDate: todoData.dueDate,
       isCompleted: false,
       completedDates: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     })
     return response.data
   } catch (error) {
@@ -70,9 +68,9 @@ export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
 export const updateTodo = async (todoData: UpdateTodoData): Promise<Todo> => {
   try {
     const { _id, ...updateData } = todoData
-    const response = await axiosInstance.put(`${baseUrl}/${_id}`, {
+    const response = await axiosInstance.patch(`${baseUrl}/${_id}`, {
       ...updateData,
-      updatedAt: new Date().toISOString(),
+      scheduledDate: updateData.dueDate,
     })
     return response.data
   } catch (error) {
@@ -82,9 +80,9 @@ export const updateTodo = async (todoData: UpdateTodoData): Promise<Todo> => {
 }
 
 // Delete a todo
-export const deleteTodo = async (id: string): Promise<void> => {
+export const deleteTodo = async (todoId: string): Promise<void> => {
   try {
-    await axiosInstance.delete(`${baseUrl}/${id}`)
+    await axiosInstance.delete(`${baseUrl}/${todoId}`)
   } catch (error) {
     console.error("Error deleting todo:", error)
     throw error
@@ -92,17 +90,9 @@ export const deleteTodo = async (id: string): Promise<void> => {
 }
 
 // Toggle todo completion status
-export const toggleTodoStatus = async (
-  id: string,
-  isCompleted: boolean
-): Promise<Todo> => {
+export const toggleTodoStatus = async (todoId: string): Promise<Todo> => {
   try {
-    const response = await axiosInstance.patch(`${baseUrl}/${id}/toggle`, {
-      isCompleted,
-      completedDates: isCompleted
-        ? [new Date().toISOString().split("T")[0]]
-        : [],
-    })
+    const response = await axiosInstance.patch(`${baseUrl}/${todoId}/toggle`)
     return response.data
   } catch (error) {
     console.error("Error toggling todo status:", error)

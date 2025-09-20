@@ -1,5 +1,10 @@
 "use client"
 
+import { useState, useRef, useEffect } from "react"
+import { useAuthContext } from "@/context/useAuthContext"
+import { Bell, Search, Settings, LogOut, User, Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
 interface SidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
@@ -13,12 +18,47 @@ export default function Sidebar({
   isMobileMenuOpen,
   onMobileMenuToggle,
 }: SidebarProps) {
+  const { authUser, logout } = useAuthContext()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMobileSearch, setShowMobileSearch] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
+  }
   const menuItems = [
     {
       id: "todos",
       title: "Todos",
       icon: "📝",
       description: "Manage your daily tasks and priorities",
+    },
+    {
+      id: "calendar",
+      title: "Calendar",
+      icon: "📅",
+      description: "View your tasks on a calendar",
     },
     {
       id: "goals",
@@ -54,13 +94,6 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
-          onClick={() => onMobileMenuToggle(false)} // Close sidebar by triggering section change
-        />
-      )}
 
       {/* Sidebar */}
       <aside
@@ -70,10 +103,34 @@ export default function Sidebar({
           transform transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+          flex flex-col h-full
         `}
       >
-        <div className="p-4 h-full pt-20 lg:pt-6">
-          {/* Navigation Menu */}
+        {/* Header Section */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center mb-4">
+            {/* Logo */}
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">GF</span>
+              </div>
+              <span className="text-lg font-bold text-gray-900">GrindFlow</span>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search goals, habits, todos..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <div className="flex-1 overflow-y-auto p-4">
           <nav className="space-y-1">
             {menuItems.map((item) => (
               <button
@@ -90,6 +147,68 @@ export default function Sidebar({
               </button>
             ))}
           </nav>
+        </div>
+
+        {/* Bottom Section - Settings and Profile */}
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          {/* Notifications */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start p-2 hover:bg-gray-100"
+          >
+            <Bell className="h-4 w-4 text-gray-600 mr-3" />
+            <span className="text-sm text-gray-700">Notifications</span>
+            <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              3
+            </span>
+          </Button>
+
+          {/* Settings */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start p-2 hover:bg-gray-100"
+          >
+            <Settings className="h-4 w-4 text-gray-600 mr-3" />
+            <span className="text-sm text-gray-700">Settings</span>
+          </Button>
+
+          {/* User Menu */}
+          <div className="relative" ref={userMenuRef}>
+            <Button
+              variant="ghost"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="w-full justify-start p-2 hover:bg-gray-100"
+            >
+              <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mr-3">
+                <User className="h-3 w-3 text-indigo-600" />
+              </div>
+              <span className="text-sm text-gray-700 font-medium">
+                {authUser?.email?.split("@")[0] || "User"}
+              </span>
+            </Button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute bottom-full left-0 mb-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">
+                    {authUser?.email || "user@example.com"}
+                  </p>
+                  <p className="text-xs text-gray-500">Free Trial</p>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
     </>

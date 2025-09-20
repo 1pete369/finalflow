@@ -6,11 +6,10 @@ import {
   Edit,
   Trash2,
   Clock,
-  Calendar,
   MoreVertical,
-  Tag,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "react-hot-toast"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -27,8 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
@@ -43,17 +40,27 @@ import {
   deleteTodo,
   toggleTodoStatus,
   type Todo,
-  type CreateTodoData,
 } from "@/services"
 
 interface TodosSectionProps {
   showTodoForm: boolean
   setShowTodoForm: (show: boolean) => void
-  filter: "all" | "pending" | "completed"
+  filter: "all" | "pending" | "completed" | "upcoming" | "past"
+  priorityFilter?: "all" | "high" | "medium" | "low"
+  categoryFilter?:
+    | "all"
+    | "personal"
+    | "work"
+    | "learning"
+    | "health"
+    | "shopping"
+    | "finance"
   onCountsUpdate?: (counts: {
     all: number
     pending: number
     completed: number
+    upcoming: number
+    past: number
   }) => void
 }
 
@@ -61,11 +68,14 @@ export default function TodosSection({
   showTodoForm,
   setShowTodoForm,
   filter,
+  priorityFilter = "all",
+  categoryFilter = "all",
   onCountsUpdate,
 }: TodosSectionProps) {
   const [todos, setTodos] = useState<Todo[]>([])
   const [loading, setLoading] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
+  const [, setCurrentTime] = useState(new Date())
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -78,6 +88,52 @@ export default function TodosSection({
     recurring: "none" as "none" | "daily" | "weekly" | "monthly",
     days: [] as string[],
   })
+
+   const todayISO = new Date().toISOString().split("T")[0]
+
+   // Helper function to capitalize first letter only
+   const capitalizeFirst = (str: string) => {
+     if (!str) return str
+     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+   }
+
+   // Helper function to check if todo toggle should be disabled
+   const isToggleDisabled = (scheduledDate: string) => {
+     const d = new Date(scheduledDate)
+     const y = d.getUTCFullYear()
+     const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+     const da = String(d.getUTCDate()).padStart(2, "0")
+     const iso = `${y}-${m}-${da}`
+     
+     // Disable toggle for past and future todos (only allow today)
+     return iso !== todayISO
+   }
+
+   // Helper function to check if current time is within todo's time block
+   const isCurrentlyActive = (scheduledDate: string, startTime: string, endTime: string) => {
+     const todoDate = new Date(scheduledDate).toISOString().split('T')[0]
+     const today = new Date().toISOString().split('T')[0]
+     
+     // Only check if it's today's todo
+     if (todoDate !== today) return false
+     
+     const now = new Date()
+     const currentTime = now.getHours() * 60 + now.getMinutes() // Current time in minutes
+     
+     // Parse start and end times
+     const [startHour, startMin] = startTime.split(':').map(Number)
+     const [endHour, endMin] = endTime.split(':').map(Number)
+     
+     const startMinutes = startHour * 60 + startMin
+     const endMinutes = endHour * 60 + endMin
+     
+     return currentTime >= startMinutes && currentTime <= endMinutes
+   }
+
+  // Removed left border accent by date to simplify UI
+  const getTodoCardStyling = () => {
+    return ""
+  }
 
   // Load todos from API
   const loadTodos = async () => {
@@ -97,16 +153,85 @@ export default function TodosSection({
     loadTodos()
   }, [])
 
+  // Smart timer that updates exactly when todos start/end
+  useEffect(() => {
+    const updateTimer = () => {
+      setCurrentTime(new Date())
+      
+      // Calculate when the next update should happen
+      const now = new Date()
+      const currentMinutes = now.getHours() * 60 + now.getMinutes()
+      
+      // Get today's todos to check their start/end times
+      const today = now.toISOString().split('T')[0]
+      const todayTodos = todos.filter(todo => {
+        const todoDateStr = new Date(todo.scheduledDate).toISOString().split('T')[0]
+        return todoDateStr === today
+      })
+      
+      // Collect all start and end times for today's todos
+      const allTimes: number[] = []
+      todayTodos.forEach(todo => {
+        const [startHour, startMin] = todo.startTime.split(':').map(Number)
+        const [endHour, endMin] = todo.endTime.split(':').map(Number)
+        
+        const startMinutes = startHour * 60 + startMin
+        const endMinutes = endHour * 60 + endMin
+        
+        // Only add future times
+        if (startMinutes > currentMinutes) allTimes.push(startMinutes)
+        if (endMinutes > currentMinutes) allTimes.push(endMinutes)
+      })
+      
+      // Find the next time when a todo starts or ends
+      const nextTime = allTimes.length > 0 ? Math.min(...allTimes) : null
+      
+      let nextUpdateMs: number
+      if (nextTime !== null) {
+        // Update exactly when the next todo starts or ends
+        const minutesUntilNext = nextTime - currentMinutes
+        nextUpdateMs = minutesUntilNext * 60 * 1000
+        
+        // Add a small buffer (1 second) to ensure we're past the transition
+        nextUpdateMs += 1000
+      } else {
+        // No more todos today, update at the next minute boundary
+        const secondsUntilNextMinute = 60 - now.getSeconds()
+        nextUpdateMs = secondsUntilNextMinute * 1000
+      }
+      
+      // Set timeout for the calculated time
+      return setTimeout(updateTimer, Math.max(1000, nextUpdateMs))
+    }
+    
+    // Initial update
+    const timer = updateTimer()
+    
+    return () => clearTimeout(timer)
+  }, [todos]) // Re-run when todos change
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
+      const start = formData.startTime
+      const end = formData.endTime
+      if (start && end && start >= end) {
+        toast.error("End time must be later than start time.")
+        return
+      }
+
+      if (!formData.dueDate || formData.dueDate < todayISO) {
+        toast.error("Date must be today or a future date.")
+        return
+      }
+
       if (editingTodo) {
         // Update existing todo
         const updatedTodo = await updateTodo({
           _id: editingTodo._id,
           title: formData.title,
-          description: formData.description,
+          description: "",
           priority: formData.priority,
           dueDate: formData.dueDate,
           category: formData.category,
@@ -123,11 +248,13 @@ export default function TodosSection({
           )
         )
         setEditingTodo(null)
+        // Refresh todos from server to ensure consistency
+        await loadTodos()
       } else {
         // Add new todo
         const newTodo = await createTodo({
           title: formData.title,
-          description: formData.description,
+          description: "",
           priority: formData.priority,
           dueDate: formData.dueDate,
           category: formData.category,
@@ -155,19 +282,29 @@ export default function TodosSection({
         days: [],
       })
       setShowTodoForm(false)
+      toast.success(editingTodo ? "Todo updated" : "Todo created")
     } catch (error) {
       console.error("Failed to save todo:", error)
+      toast.error("Failed to save todo")
       // You might want to show a toast notification here
     }
   }
 
   const handleEdit = (todo: Todo) => {
     setEditingTodo(todo)
+    
+    // Convert UTC date properly for form input
+    const date = new Date(todo.scheduledDate)
+    const year = date.getUTCFullYear()
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(date.getUTCDate()).padStart(2, "0")
+    const formattedDate = `${year}-${month}-${day}`
+    
     setFormData({
       title: todo.title,
-      description: todo.description,
+      description: "",
       priority: todo.priority,
-      dueDate: new Date(todo.scheduledDate).toISOString().split("T")[0], // Convert Date to YYYY-MM-DD format
+      dueDate: formattedDate,
       category: todo.category,
       startTime: todo.startTime,
       endTime: todo.endTime,
@@ -182,55 +319,68 @@ export default function TodosSection({
     try {
       await deleteTodo(todoId)
       setTodos(todos.filter((todo) => todo._id !== todoId))
+      toast.success("Todo deleted successfully")
     } catch (error) {
       console.error("Failed to delete todo:", error)
-      // You might want to show a toast notification here
+      toast.error("Failed to delete todo")
     }
   }
 
   const handleStatusChange = async (todoId: string, isCompleted: boolean) => {
     try {
-      const updatedTodo = await toggleTodoStatus(todoId, isCompleted)
+      const updatedTodo = await toggleTodoStatus(todoId)
       setTodos(todos.map((todo) => (todo._id === todoId ? updatedTodo : todo)))
+      toast.success(isCompleted ? "Todo marked as completed" : "Todo marked as pending")
     } catch (error) {
       console.error("Failed to update todo status:", error)
-      // You might want to show a toast notification here
+      toast.error("Failed to update todo status")
     }
   }
 
-  const getPriorityColor = (priority: Todo["priority"]) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "low":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
+  // removed usage in cards; helper not needed right now
 
   const filteredTodos = todos.filter((todo) => {
-    if (filter === "all") return true
-    if (filter === "pending") return !todo.isCompleted
-    if (filter === "completed") return todo.isCompleted
-    return true
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Get todo's date in YYYY-MM-DD format  
+    const todoDateStr = new Date(todo.scheduledDate).toISOString().split('T')[0]
+    
+    // Check if todo is scheduled for today
+    const isToday = todoDateStr === today
+    const isPast = todoDateStr < today
+    const isFuture = todoDateStr > today
+    
+    // Extra filters
+    const matchesPriority =
+      priorityFilter === "all" || todo.priority === priorityFilter
+    const matchesCategory =
+      categoryFilter === "all" || todo.category === categoryFilter
+    
+    if (filter === "all") {
+      // Show only today's todos (both completed and pending)
+      return isToday && matchesPriority && matchesCategory
+    }
+    if (filter === "pending") {
+      // Show only today's incomplete todos
+      return !todo.isCompleted && isToday && matchesPriority && matchesCategory
+    }
+    if (filter === "completed") {
+      // Show only today's completed todos
+      return todo.isCompleted && isToday && matchesPriority && matchesCategory
+    }
+    if (filter === "upcoming") {
+      // Show future incomplete todos
+      return isFuture && !todo.isCompleted && matchesPriority && matchesCategory
+    }
+    if (filter === "past") {
+      // Show past todos (completed and incomplete)
+      return isPast && matchesPriority && matchesCategory
+    }
+    return matchesPriority && matchesCategory
   })
 
-  // Helper function to format date for display
-  const formatDateForDisplay = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    } catch (error) {
-      return dateString
-    }
-  }
+  // (Removed date display in cards) left helper unused previously
 
   // Group todos by date
   const groupTodosByDate = (todos: Todo[]) => {
@@ -240,7 +390,12 @@ export default function TodosSection({
     const yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
 
-    const formatDate = (date: Date) => date.toISOString().split("T")[0]
+    const formatDate = (date: Date) => {
+      const year = date.getUTCFullYear()
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0")
+      const day = String(date.getUTCDate()).padStart(2, "0")
+      return `${year}-${month}-${day}`
+    }
     const todayStr = formatDate(today)
     const tomorrowStr = formatDate(tomorrow)
     const yesterdayStr = formatDate(yesterday)
@@ -249,7 +404,8 @@ export default function TodosSection({
 
     todos.forEach((todo) => {
       // Convert scheduledDate to YYYY-MM-DD format for grouping
-      const todoDate = new Date(todo.scheduledDate).toISOString().split("T")[0]
+      const d = new Date(todo.scheduledDate)
+      const todoDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`
       if (!grouped[todoDate]) {
         grouped[todoDate] = []
       }
@@ -270,13 +426,22 @@ export default function TodosSection({
         month: "long",
         day: "numeric",
         year: "numeric",
+        timeZone: "UTC",
       })
     }
 
     return sortedDates.map((dateStr) => ({
       date: dateStr,
       label: getDateLabel(dateStr),
-      todos: grouped[dateStr],
+      todos: grouped[dateStr].sort((a, b) => {
+        // Sort by creation date (newest first)
+        // If createdAt is available, use it; otherwise use _id (which is typically chronological in MongoDB)
+        if (a.createdAt && b.createdAt) {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        }
+        // Fallback to _id comparison (newer MongoDB ObjectIds are greater)
+        return b._id.localeCompare(a._id)
+      }),
     }))
   }
 
@@ -285,10 +450,30 @@ export default function TodosSection({
   // Update counts whenever todos change
   useEffect(() => {
     if (onCountsUpdate) {
+      const today = new Date().toISOString().split('T')[0]
+      
+      // Filter todos by date categories
+      const todayTodos = todos.filter((todo) => {
+        const todoDateStr = new Date(todo.scheduledDate).toISOString().split('T')[0]
+        return todoDateStr === today
+      })
+      
+      const pastTodos = todos.filter((todo) => {
+        const todoDateStr = new Date(todo.scheduledDate).toISOString().split('T')[0]
+        return todoDateStr < today
+      })
+      
+      const upcomingTodos = todos.filter((todo) => {
+        const todoDateStr = new Date(todo.scheduledDate).toISOString().split('T')[0]
+        return todoDateStr > today && !todo.isCompleted
+      })
+
       const counts = {
-        all: todos.length,
-        pending: todos.filter((todo) => !todo.isCompleted).length,
-        completed: todos.filter((todo) => todo.isCompleted).length,
+        all: todayTodos.length, // Today's todos (completed + pending)
+        pending: todayTodos.filter((todo) => !todo.isCompleted).length, // Today's pending
+        completed: todayTodos.filter((todo) => todo.isCompleted).length, // Today's completed
+        upcoming: upcomingTodos.length, // Future incomplete todos
+        past: pastTodos.length, // All past todos
       }
       onCountsUpdate(counts)
     }
@@ -328,20 +513,6 @@ export default function TodosSection({
               />
             </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Describe your todo..."
-                rows={3}
-                required
-              />
-            </div>
 
             {/* Priority and Category Row */}
             <div className="grid grid-cols-2 gap-4">
@@ -401,7 +572,20 @@ export default function TodosSection({
             {/* Date and Time Row */}
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dueDate">Date</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="dueDate">Date</Label>
+                  <Badge
+                    variant="secondary"
+                    className={`text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 ${
+                      formData.dueDate && formData.dueDate > todayISO
+                        ? ""
+                        : "invisible"
+                    }`}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    Scheduled
+                  </Badge>
+                </div>
                 <Input
                   id="dueDate"
                   type="date"
@@ -495,49 +679,39 @@ export default function TodosSection({
             </div>
 
             {/* Tasks for this date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
+            <div className="flex flex-wrap gap-4 ">
               {group.todos.map((todo) => (
-                <div
-                  key={todo._id}
-                  className={` border-1 border-gray-200 transition-all w-full${
-                    todo.isCompleted ? "opacity-50" : ""
-                  } bg-gradient-to-r from-white to-gray-50`}
-                >
+                 <div
+                   key={todo._id}
+                   className={`border-2 border-gray-300 transition-all bg-white h-auto min-h-[96px] w-[320px] ${getTodoCardStyling()}`}
+                 >
                   {/* Top Section - Title and Actions */}
                   <div className="flex items-center justify-between  px-3 pt-3 ">
-                    <div className="flex items-center gap-2 flex-1 ">
-                      <div className="flex items-center gap-2 flex-1 ">
-                        <Checkbox
-                          checked={todo.isCompleted}
-                          onCheckedChange={(checked) =>
-                            handleStatusChange(todo._id, checked as boolean)
-                          }
-                          className="h-8 w-8 rounded-full border-1 border-green-500 data-[state=checked]:border-green-500 data-[state=checked]:bg-green-500 data-[state=checked]:text-white"
-                          id={`todo-${todo._id}`}
-                        />
-                        <div className="flex flex-col justify-between gap-1">
-                          <Label
-                            htmlFor={`todo-${todo._id}`}
-                            className={`text font-semibold truncate h-6 cursor-pointer ${
-                              todo.isCompleted
-                                ? "line-through text-gray-500"
-                                : "text-gray-900"
-                            }`}
-                          >
-                            {todo.title}
-                          </Label>
-                          {/* Middle Section - Description */}
-                          <Label
-                            htmlFor={`todo-${todo._id}`}
-                            className={`text-xs line-clamp-1 cursor-pointer ${
-                              todo.isCompleted
-                                ? "text-gray-400"
-                                : "text-gray-600"
-                            }`}
-                          >
-                            {todo.description}
-                          </Label>
-                        </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Checkbox
+                        checked={todo.isCompleted}
+                        onCheckedChange={(checked) =>
+                          handleStatusChange(todo._id, checked as boolean)
+                        }
+                        disabled={isToggleDisabled(todo.scheduledDate)}
+                        className={`h-8 w-8 rounded-full border-1 border-green-500 data-[state=checked]:border-green-500 data-[state=checked]:bg-green-500 data-[state=checked]:text-white shrink-0 ${
+                          isToggleDisabled(todo.scheduledDate) 
+                            ? "opacity-50 cursor-not-allowed" 
+                            : ""
+                        }`}
+                        id={`todo-${todo._id}`}
+                      />
+                      <div className="flex flex-col justify-between gap-1 flex-1 min-w-0">
+                        <Label
+                          htmlFor={`todo-${todo._id}`}
+                          className={`text font-semibold truncate cursor-pointer block ${
+                            todo.isCompleted
+                              ? "line-through text-gray-400"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {capitalizeFirst(todo.title)}
+                        </Label>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <DropdownMenu>
@@ -568,40 +742,42 @@ export default function TodosSection({
                     </div>
                   </div>
 
-                  {/* Bottom Section - Details and Category */}
-                  <div className="flex items-center justify-between mt-2  px-3 py-2">
-                    <div className="flex items-center gap-4 text-xs">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-gray-600" />
-                        <span className="text-gray-700 font-medium">
-                          {todo.startTime} - {todo.endTime}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-gray-600" />
-                        <span className="text-gray-700 font-medium">
-                          {formatDateForDisplay(todo.scheduledDate)}
-                        </span>
-                      </div>
+                  {/* Bottom Section - Time (left) and Live/Scheduled (right) */}
+                  <div className="flex items-center justify-between mt-2 px-3 py-2 text-xs text-gray-600">
+                    {/* Left: time */}
+                    <div className="flex items-center gap-2  ">
+                      <Clock className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-700 font-medium">
+                        {todo.startTime} - {todo.endTime}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant="outline"
-                        className={`text-xs px-2 py-0.5 ${getPriorityColor(
-                          todo.priority
-                        )}`}
-                      >
-                        {todo.priority.charAt(0).toUpperCase() +
-                          todo.priority.slice(1)}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700"
-                      >
-                        <Tag className="mr-1 h-3 w-3" />
-                        {todo.category.charAt(0).toUpperCase() +
-                          todo.category.slice(1)}
-                      </Badge>
+                    {/* Right: live + scheduled */}
+                    <div className="flex items-center gap-3 ">
+                      {isCurrentlyActive(todo.scheduledDate, todo.startTime, todo.endTime) && (
+                        <span className="flex items-center gap-1 text-purple-600" title="Happening now">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                          Live
+                        </span>
+                      )}
+                      {(() => {
+                      const d = new Date(todo.scheduledDate)
+                      const y = d.getUTCFullYear()
+                      const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+                      const da = String(d.getUTCDate()).padStart(2, "0")
+                      const iso = `${y}-${m}-${da}`
+                      const isFuture = iso > todayISO
+                      return (
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-200 ${
+                            isFuture ? "" : "hidden"
+                          }`}
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          Scheduled
+                        </Badge>
+                      )
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -613,15 +789,17 @@ export default function TodosSection({
 
       {/* Empty State */}
       {filteredTodos.length === 0 && !showTodoForm && (
-        <Card className="text-center py-8 border-dashed">
-          <CardContent className="flex flex-col items-center">
-            <CheckCircle className="h-12 w-12 text-gray-300 mb-3" />
+        <div className="w-full flex items-center justify-center py-24">
+          <div className="text-center">
+            <CheckCircle className="h-12 w-12 text-gray-300 mb-3 mx-auto" />
             <h3 className="text-base font-medium text-gray-900 mb-2">
               No todos found
             </h3>
-            <p className="text-gray-600 mb-4 max-w-md text-sm">
+            <p className="text-gray-600 mb-4 max-w-md text-sm mx-auto">
               {filter === "all"
                 ? "Start by creating your first todo to organize your day"
+                : filter === "upcoming"
+                ? "No upcoming todos found. Schedule some tasks for the future!"
                 : `No ${filter} todos found. Try changing the filter or add new todos.`}
             </p>
             <Button
@@ -630,8 +808,8 @@ export default function TodosSection({
             >
               Create Your First Todo
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   )
