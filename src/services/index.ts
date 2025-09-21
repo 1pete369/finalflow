@@ -20,8 +20,13 @@ export {
   type UpdateGoalData,
 } from "./goals.service"
 
+export {
+  habitsService,
+  type Habit,
+  type CreateHabitData,
+  type UpdateHabitData,
+} from "./habits.service"
+
 // Future services can be added here:
-// export { goalsService } from './goals.service'
-// export { habitsService } from './habits.service'
 // export { journalsService } from './journals.service'
 // export { notesService } from './notes.service'

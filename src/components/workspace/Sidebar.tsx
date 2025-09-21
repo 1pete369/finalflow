@@ -2,25 +2,22 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useAuthContext } from "@/context/useAuthContext"
-import { Bell, Search, Settings, LogOut, User, Menu } from "lucide-react"
+import { Bell, Settings, LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface SidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
   isMobileMenuOpen: boolean
-  onMobileMenuToggle: (isOpen: boolean) => void
 }
 
 export default function Sidebar({
   activeSection,
   onSectionChange,
   isMobileMenuOpen,
-  onMobileMenuToggle,
 }: SidebarProps) {
   const { authUser, logout } = useAuthContext()
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showMobileSearch, setShowMobileSearch] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   // Close user menu when clicking outside
@@ -108,7 +105,7 @@ export default function Sidebar({
       >
         {/* Header Section */}
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center mb-4">
+          <div className="flex items-center">
             {/* Logo */}
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -118,15 +115,6 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search goals, habits, todos..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-            />
-          </div>
         </div>
 
         {/* Navigation Menu */}

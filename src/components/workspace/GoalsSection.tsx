@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Target, Plus, Edit, Trash2, Calendar, ArrowRight } from "lucide-react"
+import { Target, Plus, Edit, Trash2, Calendar, ArrowRight, Crown } from "lucide-react"
 import { MoreVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import toast from "react-hot-toast"
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ interface GoalsSectionProps {
 export default function GoalsSection({ showAddForm, setShowAddForm }: GoalsSectionProps) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -96,8 +98,21 @@ export default function GoalsSection({ showAddForm, setShowAddForm }: GoalsSecti
         }
         const created = await createGoal(payload)
         setGoals([...goals, created])
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to create goal", err)
+        
+        // Check if it's a quota exceeded error
+        if (err && typeof err === 'object' && 'response' in err) {
+          const error = err as { response?: { status?: number; data?: { error?: string } } }
+          if (error.response?.status === 403 && error.response?.data?.error?.includes("Quota exceeded")) {
+            toast.error("Goal limit reached!")
+            setShowUpgradeDialog(true)
+          } else {
+            toast.error("Failed to create goal. Please try again.")
+          }
+        } else {
+          toast.error("Failed to create goal. Please try again.")
+        }
       }
     }
 
@@ -324,7 +339,7 @@ export default function GoalsSection({ showAddForm, setShowAddForm }: GoalsSecti
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     {goal.title}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2 overflow-hidden text-ellipsis">
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2 overflow-hidden text-ellipsis h-10">
                     {goal.description}
                   </p>
                 </div>
@@ -449,6 +464,87 @@ export default function GoalsSection({ showAddForm, setShowAddForm }: GoalsSecti
           </Button>
         </div>
       )}
+
+      {/* Plan Upgrade Dialog */}
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              <DialogTitle className="text-lg font-semibold">Upgrade Your Plan</DialogTitle>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-gray-600 mb-2">
+                You&apos;ve reached the limit of 3 goals on the free plan.
+              </p>
+              <p className="text-sm text-gray-500">
+                Upgrade to create unlimited goals and unlock more features!
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Personal Plan</h4>
+                    <p className="text-sm text-gray-500">10 goals • $9.99/month</p>
+                  </div>
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                    Upgrade
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Community Plan</h4>
+                    <p className="text-sm text-gray-500">50 goals • $19.99/month</p>
+                  </div>
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                    Upgrade
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Premium Plan</h4>
+                    <p className="text-sm text-gray-500">Unlimited goals • $29.99/month</p>
+                  </div>
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                    Upgrade
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowUpgradeDialog(false)}
+                className="flex-1"
+              >
+                Maybe Later
+              </Button>
+              <Button 
+                onClick={() => {
+                  // TODO: Implement upgrade flow
+                  toast("Upgrade feature coming soon!", { icon: "ℹ️" })
+                  setShowUpgradeDialog(false)
+                }}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+              >
+                View Plans
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

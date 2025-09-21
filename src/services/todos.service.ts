@@ -14,6 +14,7 @@ export interface Todo {
   priority: "low" | "medium" | "high"
   completedDates: string[]
   scheduledDate: string
+  color: "blue" | "green" | "purple" | "orange" | "red" | "pink" | "indigo" | "teal" | "yellow" | "gray"
   createdAt: string
   updatedAt: string
 }
@@ -29,6 +30,7 @@ export interface CreateTodoData {
   icon: string
   recurring: "none" | "daily" | "weekly" | "monthly"
   days: string[]
+  color: "blue" | "green" | "purple" | "orange" | "red" | "pink" | "indigo" | "teal" | "yellow" | "gray"
 }
 
 export interface UpdateTodoData extends Partial<CreateTodoData> {

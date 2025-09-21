@@ -21,6 +21,7 @@ import HabitsSection from "@/components/workspace/HabitsSection"
 import NotesSection from "@/components/workspace/NotesSection"
 import JournalsSection from "@/components/workspace/JournalsSection"
 import FinanceSection from "@/components/workspace/FinanceSection"
+import TimelineView from "@/components/workspace/TimelineView"
 
 type FilterKey = "all" | "pending" | "completed" | "upcoming" | "past"
 
@@ -35,6 +36,8 @@ export default function WorkspacePage() {
   const [showTodoForm, setShowTodoForm] = useState(false)
   const [showFinanceForm, setShowFinanceForm] = useState(false)
   const [showGoalsForm, setShowGoalsForm] = useState(false)
+  const [showHabitsForm, setShowHabitsForm] = useState(false)
+  const [showTimelineModal, setShowTimelineModal] = useState(false)
   const [filter, setFilter] = useState<FilterKey>("all")
   const [priorityFilter, setPriorityFilter] = useState<"all" | "high" | "medium" | "low">("all")
   const [categoryFilter, setCategoryFilter] = useState<
@@ -53,6 +56,15 @@ export default function WorkspacePage() {
     upcoming: 0,
     past: 0,
   })
+  const [todos, setTodos] = useState<any[]>([])
+  const getLocalISODate = () => {
+    const d = new Date()
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, "0")
+    const day = String(d.getDate()).padStart(2, "0")
+    return `${y}-${m}-${day}`
+  }
+  const [selectedDate, setSelectedDate] = useState(getLocalISODate())
 
 
   // Read initial section from URL on mount
@@ -98,21 +110,81 @@ export default function WorkspacePage() {
     switch (activeSection) {
       case "todos":
         return (
-          <TodosSection
-            showTodoForm={showTodoForm}
-            setShowTodoForm={setShowTodoForm}
-            filter={filter}
-            priorityFilter={priorityFilter}
-            categoryFilter={categoryFilter}
-            onCountsUpdate={setTodoCounts}
-          />
+          <div className="h-full min-h-0 overflow-hidden">
+            {/* Responsive Layout - single column on mobile, 3 cols on desktop */}
+            <div className="grid lg:grid-cols-3 gap-6 h-full min-h-0 overflow-hidden">
+              {/* Main Todos Section */}
+              <div className="lg:col-span-2 h-full overflow-hidden">
+                <TodosSection
+                  showTodoForm={showTodoForm}
+                  setShowTodoForm={setShowTodoForm}
+                  filter={filter}
+                  priorityFilter={priorityFilter}
+                  categoryFilter={categoryFilter}
+                  onCountsUpdate={setTodoCounts}
+                  onTodosUpdate={setTodos}
+                  onShowTimeline={() => setShowTimelineModal(true)}
+                />
+              </div>
+              {/* Timeline View - Desktop Sidebar */}
+              <div className="hidden lg:block lg:col-span-1 h-full overflow-hidden">
+                <TimelineView
+                  todos={todos}
+                  selectedDate={selectedDate}
+                  onEditTodo={(todo) => {
+                    console.log('Edit todo:', todo)
+                  }}
+                  onDeleteTodo={(todoId) => {
+                    console.log('Delete todo:', todoId)
+                  }}
+                  onToggleStatus={(todoId, isCompleted) => {
+                    console.log('Toggle todo:', todoId, isCompleted)
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Mobile/Tablet Layout uses the same TodosSection as desktop to avoid duplicate mounts */}
+            
+            {/* Timeline Modal for Mobile/Tablet */}
+            {showTimelineModal && (
+              <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-lg w-full max-w-4xl h-[80vh] flex flex-col animate-in slide-in-from-bottom-4 duration-300 ease-out">
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900">Timeline</h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowTimelineModal(false)}
+                      className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                  
+                  {/* Timeline Content */}
+                  <div className="flex-1 overflow-hidden">
+                    <TimelineView
+                      todos={todos}
+                      onEditTodo={(todo) => {
+                        console.log('Edit todo:', todo)
+                        setShowTimelineModal(false)
+                      }}
+                      showHeader={false}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )
       case "calendar":
         return <CalendarSection />
       case "goals":
         return <GoalsSection showAddForm={showGoalsForm} setShowAddForm={setShowGoalsForm} />
       case "habits":
-        return <HabitsSection />
+        return <HabitsSection showAddForm={showHabitsForm} setShowAddForm={setShowHabitsForm} />
       case "notes":
         return <NotesSection />
       case "journals":
@@ -126,12 +198,26 @@ export default function WorkspacePage() {
         )
       default:
         return (
-          <TodosSection
-            showTodoForm={showTodoForm}
-            setShowTodoForm={setShowTodoForm}
-            filter={filter}
-            onCountsUpdate={setTodoCounts}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+            <div className="lg:col-span-2">
+              <TodosSection
+                showTodoForm={showTodoForm}
+                setShowTodoForm={setShowTodoForm}
+                filter={filter}
+                onCountsUpdate={setTodoCounts}
+                onTodosUpdate={setTodos}
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <TimelineView
+                todos={todos}
+                selectedDate={selectedDate}
+                onEditTodo={(todo) => console.log('Edit todo:', todo)}
+                onDeleteTodo={(todoId) => console.log('Delete todo:', todoId)}
+                onToggleStatus={(todoId, isCompleted) => console.log('Toggle todo:', todoId, isCompleted)}
+              />
+            </div>
+          </div>
         )
     }
   }
@@ -150,14 +236,13 @@ export default function WorkspacePage() {
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
           isMobileMenuOpen={isMobileMenuOpen}
-          onMobileMenuToggle={setIsMobileMenuOpen}
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-4 overflow-y-auto">
-          <div className="max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-3 sm:p-4 lg:p-4 h-full overflow-hidden">
+          <div className="max-w-7xl mx-auto w-full h-full flex flex-col">
             {/* Header Row */}
-            <div className="mb-4 pr-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between w-full">
+            <div className="mb-4 pr-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between w-full flex-shrink-0">
               {/* Greeting Section */}
               <div className="flex items-center justify-between gap-2 lg:w-auto w-full min-w-0">
                 <div className="flex-1 min-w-0">
@@ -375,9 +460,11 @@ export default function WorkspacePage() {
                 {activeSection !== "calendar" && (
                   <button
                     onClick={() => {
-                      if (activeSection === "todos") setShowTodoForm(true)
-                      else if (activeSection === "finance") setShowFinanceForm(true)
+                      if (activeSection === "todos") {
+                        setShowTodoForm(true)
+                      } else if (activeSection === "finance") setShowFinanceForm(true)
                       else if (activeSection === "goals") setShowGoalsForm(true)
+                      else if (activeSection === "habits") setShowHabitsForm(true)
                     }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 w-fit text-sm rounded-lg font-medium flex items-center gap-2 shadow-sm shrink-0"
                   >
@@ -392,7 +479,9 @@ export default function WorkspacePage() {
             </div>
 
             {/* Content Section */}
-            {renderActiveSection()}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {renderActiveSection()}
+            </div>
           </div>
         </main>
       </div>
