@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import Navbar from "@/components/Navbar"
-import { warmBackend } from "@/lib/axiosInstance"
 import { AuthContextProvider } from "@/context/useAuthContext"
 import { Toaster } from "react-hot-toast"
 import { Inter } from "next/font/google"

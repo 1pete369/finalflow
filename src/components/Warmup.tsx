@@ -10,7 +10,7 @@ export default function Warmup() {
     const ping = async () => {
       try {
         await warmBackend()
-      } catch (_e) {
+      } catch {
         // ignore
       }
     }

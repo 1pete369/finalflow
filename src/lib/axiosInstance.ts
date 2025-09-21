@@ -1,9 +1,12 @@
 import axios from "axios"
 
 const getBaseURL = () => {
-  if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
+  // If running in browser on localhost, force localhost API
+  if (typeof window !== "undefined") {
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    if (isLocal) return "http://localhost:5001/api"
   }
+  // Otherwise prefer env
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
 }
 
@@ -17,7 +20,7 @@ export const axiosInstance = axios.create({
 export const warmBackend = async () => {
   try {
     await axiosInstance.get("/healthz")
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
