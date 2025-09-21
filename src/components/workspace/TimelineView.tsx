@@ -2,25 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Clock, Dot, ChevronLeft, ChevronRight } from "lucide-react"
-
-/* ------------ Types from your app ------------ */
-interface Todo {
-  _id: string
-  title: string
-  startTime: string // "HH:MM"
-  endTime: string   // "HH:MM"
-  category: string
-  isCompleted: boolean
-  conflicts: unknown[]
-  scheduledDate?: string   // "YYYY-MM-DD"
-  color?: "blue" | "green" | "purple" | "orange" | "red" | "pink" | "indigo" | "teal" | "yellow" | "gray"
-}
+import type { Todo } from "@/services"
 
 interface TimelineViewProps {
   todos: Todo[]
   selectedDate?: string
   onEditTodo?: (todo: Todo) => void
   showHeader?: boolean
+  onDeleteTodo?: (todoId: string) => void
+  onToggleStatus?: (todoId: string, isCompleted: boolean) => void
 }
 
 /* ------------ Compact design constants (right panel) ------------ */
