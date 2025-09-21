@@ -48,7 +48,7 @@ export default function ConflictWarningDialog({
             </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-56 overflow-y-auto pr-1 scrollbar-hide">
             {conflicts.map((conflict, index) => (
               <div
                 key={index}

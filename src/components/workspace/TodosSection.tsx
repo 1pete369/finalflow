@@ -41,6 +41,8 @@ import {
   toggleTodoStatus,
   type Todo,
 } from "@/services"
+import ConflictWarningDialog from "@/components/ui/ConflictWarningDialog"
+import { detectTimeConflicts, type TimeConflict } from "@/utils/timeConflict"
 
 // Time formatting helper
 const formatTo12Hour = (time24: string): string => {
@@ -142,6 +144,8 @@ export default function TodosSection({
   const [loading, setLoading] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
   const [, setCurrentTime] = useState(new Date())
+  const [showConflictDialog, setShowConflictDialog] = useState(false)
+  const [conflicts, setConflicts] = useState<TimeConflict[]>([])
   
   const [formData, setFormData] = useState({
     title: "",
@@ -299,6 +303,25 @@ export default function TodosSection({
     try {
       if (!formData.dueDate || formData.dueDate < getTodayISO()) {
         toast.error("Date must be today or a future date.")
+        return
+      }
+
+      // Check for time conflicts before proceeding
+      const slot = { date: formData.dueDate, start: formData.startTime, end: formData.endTime }
+      // Only check conflicts against today's todos
+      const todayISO = getTodayISO()
+      const existing = todos.filter(t => (t.scheduledDate.split('T')[0] === todayISO)).map(t => ({
+        _id: t._id,
+        title: t.title,
+        scheduledDate: t.scheduledDate,
+        startTime: t.startTime,
+        endTime: t.endTime,
+        priority: t.priority,
+      }))
+      const found = detectTimeConflicts(slot, existing, editingTodo?._id)
+      if (found.length > 0) {
+        setConflicts(found)
+        setShowConflictDialog(true)
         return
       }
 
@@ -586,6 +609,18 @@ export default function TodosSection({
 
   return (
     <div className="h-full flex flex-col space-y-6 overflow-hidden">
+      <ConflictWarningDialog
+        isOpen={showConflictDialog}
+        onClose={() => setShowConflictDialog(false)}
+        onConfirm={async () => {
+          setShowConflictDialog(false)
+          await proceedWithTodoSubmission()
+          setConflicts([])
+        }}
+        conflicts={conflicts}
+        newTodoTitle={formData.title}
+        newTimeSlot={`${formatTo12Hour(formData.startTime)} - ${formatTo12Hour(formData.endTime)} on ${formData.dueDate}`}
+      />
       {/* Add/Edit Form */}
       <Dialog open={showTodoForm} onOpenChange={setShowTodoForm}>
         <DialogContent className="max-w-lg">
@@ -854,7 +889,7 @@ export default function TodosSection({
                     variant="outline"
                     size="sm"
                     onClick={onShowTimeline}
-                    className="text-xs h-7 px-3 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="text-xs h-7 px-3 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 shadow-sm hover:shadow-md lg:hidden"
                   >
                     <Clock className="h-3 w-3 mr-1.5" />
                     Timeline
