@@ -149,20 +149,9 @@ export default function TimelineView({
       .filter((t) => {
         if (!t.scheduledDate) return false
         
-        // Handle different date formats from the database
-        let taskDate: string
-        if (typeof t.scheduledDate === 'string') {
-          if (t.scheduledDate.includes('T')) {
-            // ISO string format - extract date part without timezone conversion
-            taskDate = t.scheduledDate.split('T')[0]
-          } else {
-            // Already in YYYY-MM-DD format
-            taskDate = t.scheduledDate
-          }
-        } else {
-          // Date object - convert to string first then extract date part
-          taskDate = t.scheduledDate.toISOString().split('T')[0]
-        }
+        // Handle different date formats from the database (scheduledDate is a string in our types)
+        const sd = t.scheduledDate
+        const taskDate = sd.includes('T') ? sd.split('T')[0] : sd
         
         return taskDate === currentSelectedDate
       })
