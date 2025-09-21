@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BookOpen, Plus, Edit, Trash2, Calendar, Heart, TrendingUp } from "lucide-react"
+import { BookOpen, Plus, Edit, Trash2, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface JournalEntry {

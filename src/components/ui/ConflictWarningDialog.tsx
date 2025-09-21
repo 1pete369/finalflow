@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, Clock, X } from "lucide-react"
+import { AlertTriangle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,8 +28,7 @@ export default function ConflictWarningDialog({
   newTodoTitle,
   newTimeSlot,
 }: ConflictWarningDialogProps) {
-  const hasOverlap = conflicts.some(c => c.conflictType === 'overlap' || c.conflictType === 'contains' || !c.conflictType)
-  const hasAdjacent = conflicts.some(c => c.conflictType === 'adjacent')
+  // derive-only values removed to satisfy lint (unused)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -44,7 +43,7 @@ export default function ConflictWarningDialog({
         <div className="space-y-4">
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-800">
-              <strong>"{newTodoTitle}"</strong> at <strong>{newTimeSlot}</strong> has scheduling conflicts:
+              <strong>&quot;{newTodoTitle}&quot;</strong> at <strong>{newTimeSlot}</strong> has scheduling conflicts:
             </p>
           </div>
 

@@ -15,6 +15,7 @@ import {
 import Sidebar from "@/components/workspace/Sidebar"
 
 import TodosSection from "@/components/workspace/TodosSection"
+import type { Todo } from "@/services"
 import CalendarSection from "@/components/workspace/CalendarSection"
 import GoalsSection from "@/components/workspace/GoalsSection"
 import HabitsSection from "@/components/workspace/HabitsSection"
@@ -56,7 +57,7 @@ export default function WorkspacePage() {
     upcoming: 0,
     past: 0,
   })
-  const [todos, setTodos] = useState<any[]>([])
+  const [todos, setTodos] = useState<Todo[]>([])
   const getLocalISODate = () => {
     const d = new Date()
     const y = d.getFullYear()
@@ -64,7 +65,7 @@ export default function WorkspacePage() {
     const day = String(d.getDate()).padStart(2, "0")
     return `${y}-${m}-${day}`
   }
-  const [selectedDate, setSelectedDate] = useState(getLocalISODate())
+  const [selectedDate] = useState(getLocalISODate())
 
 
   // Read initial section from URL on mount
