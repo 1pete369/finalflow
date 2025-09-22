@@ -7,7 +7,10 @@ const getBaseURL = () => {
     if (isLocal) return "http://localhost:5001/api"
   }
   // Otherwise prefer env
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
+  const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
+  // Normalize to ensure trailing /api suffix
+  const url = raw.replace(/\/$/, "")
+  return url.endsWith("/api") ? url : `${url}/api`
 }
 
 export const axiosInstance = axios.create({
