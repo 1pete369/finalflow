@@ -104,8 +104,12 @@ export function AuthContextProvider({
       console.log("after toast")
     } catch (error) {
       console.log(error)
-      // @ts-expect-error because xyz reason
-      toast.error(error.response.data.message)
+      const message =
+        (typeof error === "object" && error &&
+          // @ts-expect-error narrowing axios error
+          (error.response?.data?.message || error.message)) ||
+        "Failed to sign up. Please try again."
+      toast.error(message)
     } finally {
       setIsSigningUp(false)
     }
@@ -120,8 +124,12 @@ export function AuthContextProvider({
       // connectSocket(response.data)
     } catch (error) {
       console.log(error)
-      // @ts-expect-error because xyz reason
-      toast.error(error.response.data.message)
+      const message =
+        (typeof error === "object" && error &&
+          // @ts-expect-error narrowing axios error
+          (error.response?.data?.message || error.message)) ||
+        "Failed to log in. Please try again."
+      toast.error(message)
     } finally {
       setIsLoggingIn(false)
     }
@@ -134,8 +142,12 @@ export function AuthContextProvider({
       toast.success("Account logged out!")
       // disconnectSocket()
     } catch (error) {
-      // @ts-expect-error because xyz reason
-      toast.error(error.response.data.message)
+      const message =
+        (typeof error === "object" && error &&
+          // @ts-expect-error narrowing axios error
+          (error.response?.data?.message || error.message)) ||
+        "Failed to log out. Please try again."
+      toast.error(message)
     }
   }
 
@@ -146,8 +158,12 @@ export function AuthContextProvider({
       toast.success("Profile updated successfully!")
     } catch (error) {
       console.log(error)
-      // @ts-expect-error because xyz reason
-      toast.error(error.response.data.message)
+      const message =
+        (typeof error === "object" && error &&
+          // @ts-expect-error narrowing axios error
+          (error.response?.data?.message || error.message)) ||
+        "Failed to update profile. Please try again."
+      toast.error(message)
     }
   }
 
