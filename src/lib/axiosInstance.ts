@@ -60,8 +60,9 @@ axiosInstance.interceptors.response.use(
 // Warm-up ping to reduce cold-start delays on free Render dynos
 export const warmBackend = async () => {
   try {
-    // IMPORTANT: this hits the SERVER healthz, not the client
-    await axiosInstance.get("/healthz"); // resolves to https://grindflow-server-1.onrender.com/api/healthz
+    // Hit the server's healthz endpoint (outside /api path)
+    const baseURL = getBaseURL().replace('/api', ''); // Remove /api from baseURL
+    await axios.get(`${baseURL}/healthz`); // resolves to https://grindflow-server-1.onrender.com/healthz
   } catch {
     // ignore warm-up failures
   }
